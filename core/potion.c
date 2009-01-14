@@ -22,6 +22,7 @@ static void potion_cmd_usage() {
       "  -B, --bytecode     run with bytecode VM (slower, but cross-platform)\n"
       "  -X, --x86          run with x86 JIT VM (faster, x86 and x86-64)\n"
       "  -I, --inspect      print only the return value\n"
+      "  -i, --interactive  interactive repl\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
@@ -136,6 +137,58 @@ done:
   potion_destroy(P);
 }
 
+static void potion_repl_welcome() {
+  printf( // http://www.ascii-art.de/ascii/ab/bottle.txt
+    "      _____\n"
+    "     `.___,'\n"
+    "      (___)\n"
+    "      <   >\n"
+    "       ) (\n"
+    "      /`-.\\\n"
+    "     /     \\\n"
+    "    / _    _\\\n"
+    "   :,' `-.' `:\n"
+    "   |         |\n"
+    "   :         ;\n"
+    "    \\       /\n"
+    "     `.___.' ");
+  potion_cmd_version();
+}
+
+static void potion_repl_prompt() {
+  printf("pn> ");
+}
+
+static void potion_repl() {
+  const int linemax = 1024;
+  char line[linemax];
+  Potion *P = potion_create();
+  struct PNProto *f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
+  f->stack = PN_NUM(1);
+  f->source = PN_NIL;
+  f->protos = PN_TUP0();
+  f->locals = PN_TUP0();
+  f->upvals = PN_TUP0();
+  f->values = PN_TUP0();
+  f->sig = PN_TUP0();
+  f->asmb = potion_bytes(P, 8192);
+
+  potion_repl_welcome();
+
+  potion_repl_prompt();
+  while (fgets(line, linemax, stdin) != NULL) {
+    PN result = potion_repl_eval(P, f, line);
+    if (!PN_IS_NIL(result)) {
+      potion_send(potion_send(result, PN_string), PN_print);
+    }
+    printf("\n");
+
+    potion_repl_prompt();
+  }
+
+  potion_destroy(P);
+}
+
 int main(int argc, char *argv[]) {
   int i, verbose = 0, exec = 1 + POTION_JIT;
 
@@ -169,6 +222,12 @@ int main(int argc, char *argv[]) {
           strcmp(argv[i], "--stats") == 0) {
         potion_cmd_stats();
         return 0;
+      }
+
+      if (strcmp(argv[i], "-i") == 0 ||
+          strcmp(argv[i], "--interactive") == 0) {
+          potion_repl();
+          return 0;
       }
 
       if (strcmp(argv[i], "-c") == 0 ||

@@ -265,7 +265,7 @@ struct Potion_State {
 
 extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
    PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN__link,
-   PN_lookup, PN_loop, PN_print, PN_return, PN_string, PN_while;
+   PN_lookup, PN_loop, PN_print, PN_recompile, PN_return, PN_string, PN_while;
 
 //
 // the Potion functions
@@ -320,6 +320,7 @@ PN potion_any_is_nil(Potion *, PN, PN);
 PN potion_parse(Potion *, PN);
 PN potion_vm(Potion *, PN, PN, PN_SIZE, PN *);
 PN potion_eval(Potion *, const char *);
+PN potion_repl_eval(Potion *, struct PNProto *, const char *);
 PN potion_run(Potion *, PN);
 
 #ifdef X86_JIT

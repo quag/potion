@@ -529,6 +529,27 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   return (PN)f;
 }
 
+PN potion_source_recompile(Potion *P, PN self, struct PNProto *f) {
+  struct PNSource *t = (struct PNSource *)self;
+  char *start;
+  PN_OP **pos, *ptr;
+  switch (t->part) {
+    case AST_CODE:
+    case AST_BLOCK: break;
+    default: return PN_NIL; // TODO: error
+  }
+
+  ptr = (PN_OP *)(start = PN_STR_PTR(f->asmb));
+  pos = &ptr;
+  potion_source_asmb(P, f, NULL, 0, t, 0, pos);
+  PN_ASM1(OP_RETURN, 0);
+  // TODO: byte strings should be more flexible than this
+  PN_STR_LEN(f->asmb) = (char *)ptr - start;
+  f->localsize = PN_TUPLE_LEN(f->locals);
+  f->upvalsize = PN_TUPLE_LEN(f->upvals);
+  return (PN)f;
+}
+
 #define READ_U8(ptr) ({u8 rpu = *ptr; ptr += sizeof(u8); rpu;})
 #define READ_PN(pn, ptr) ({PN rpn = *(PN *)ptr; ptr += pn; rpn;})
 #define READ_CONST(pn, ptr) ({ \
@@ -686,6 +707,13 @@ PN potion_eval(Potion *P, const char *str) {
   PN bytes = potion_byte_str(P, str);
   PN code = potion_parse(P, bytes);
   code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
+  return potion_run(P, code);
+}
+
+PN potion_repl_eval(Potion *P, struct PNProto * f, const char *str) {
+  PN bytes = potion_byte_str(P, str);
+  PN code = potion_parse(P, bytes);
+  code = potion_source_recompile(P, code, f);
   return potion_run(P, code);
 }
 
