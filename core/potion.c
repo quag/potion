@@ -177,11 +177,13 @@ static void potion_repl() {
 
   potion_repl_prompt();
   while (fgets(line, linemax, stdin) != NULL) {
-    PN result = potion_repl_eval(P, f, line);
-    if (!PN_IS_NIL(result)) {
-      potion_send(potion_send(result, PN_string), PN_print);
+    if (strcmp(line, "\n") != 0) {
+      PN result = potion_repl_eval(P, f, line);
+      if (!PN_IS_NIL(result)) {
+        potion_send(potion_send(result, PN_string), PN_print);
+      }
+      printf("\n");
     }
-    printf("\n");
 
     potion_repl_prompt();
   }
